@@ -1,0 +1,205 @@
+#yahtzee
+
+import random
+import time
+
+score = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+roll = [0,0,0,0,0]
+saved = []
+scratched = []
+
+numKeep = 0
+numRoll = 1
+bonusChecked = False
+
+def currentScore():
+    hLine = '-' * 21
+    print(hLine)
+    print('[1] Ones           ' + str(score[1]).rjust(2))
+    print('[2] Twos           ' + str(score[2]).rjust(2))
+    print('[3] Threes         ' + str(score[3]).rjust(2))
+    print('[4] Fours          ' + str(score[4]).rjust(2))
+    print('[5] Fives          ' + str(score[5]).rjust(2))
+    print('[6] Sixes          ' + str(score[6]).rjust(2))
+    print(hLine)
+    print('Subtotal           ' + str(sum(score[1:7])).rjust(2))
+    print('Bonus              ' + str(score[0]).rjust(2))
+    print(hLine)
+    print('[7] Three Kind     ' + str(score[7]).rjust(2))
+    print('[8] Four Kind      ' + str(score[8]).rjust(2))
+    print('[9] Fullhouse      ' + str(score[9]).rjust(2))
+    print('[10] Little Street ' + str(score[10]).rjust(2))
+    print('[11] Big Street    ' + str(score[11]).rjust(2))
+    print('[12] Yahtzee       ' + str(score[12]).rjust(2))
+    print('[13] Chance        ' + str(score[13]).rjust(2))
+    print(hLine)
+    print('Current score      ' + str(sum(score)).rjust(2))
+    print(hLine)
+    print('Scratched: ' + str(scratched))
+
+def possibleMoves():
+    global roll
+    global possMove
+    roll = sorted(roll)
+    occurrence = [roll.count(x) for x in set(roll)]
+    occurrence = sorted(occurrence, reverse = True)
+    possMove = []
+    for i in roll:
+       possMove.append(i)
+    if occurrence[0] >= 3:
+       possMove.append(7)
+    if occurrence[0] >= 4:
+       possMove.append(8)
+    if occurrence[0] == 3 and occurrence[1] == 2:
+       possMove.append(9)
+    if roll in [[1,1,2,3,4],[1,2,2,3,4],[1,2,3,3,4],[1,2,3,4,4],[1,2,3,4,5],[1,2,3,4,6],
+                [2,2,3,4,5],[2,3,3,4,5],[2,3,4,4,5],[2,3,4,5,5],[2,3,4,5,6],
+                [1,3,4,5,6],[3,3,4,5,6],[3,4,4,5,6],[3,4,5,5,6],[3,4,5,6,6]]:
+       possMove.append(10)
+    if roll in [[1,2,3,4,5],[2,3,4,5,6]]:
+       possMove.append(11)
+    if occurrence[0] == 5:
+       possMove.append(12)
+    possMove.append(13)
+    possMove = sorted(list(set(possMove) - set(saved) - set(scratched)))
+
+def saveScratch():
+    print('')
+    currentScore()
+    scratchQ = ''
+    while True:
+        scratchQ = input('Save[Y] or Scratch[N]? ').lower()
+        if scratchQ == 'y':
+            saveScore()
+            break
+        elif scratchQ == 'n':        
+            scratch1 = ''
+            while True:
+                scratch1 = int(input('Which one? '))
+                if scratch1 not in scratched:
+                    scratched.append(scratch1)
+                    break
+                else:
+                    print('That has already been scratched.')
+                    continue
+            break
+        else:
+            print('That is not a valid input.')
+            continue
+
+def saveScore():     
+    global roll
+    global score
+    print('')
+    print('Where would you like to save your score?')
+    print('Valid options are: ' + str(possMove))
+    saveLocation = ''
+    while saveLocation not in possMove:
+        saveLocation = int(input('Enter a number: '))
+        if saveLocation in possMove:
+            break
+        print('That is not a valid move')
+    saved.append(saveLocation)
+    if saveLocation in range(1,7):
+        score[saveLocation] = roll.count(saveLocation) * saveLocation
+    if saveLocation in [7,8,13]:
+        score[saveLocation] = sum(roll)
+    if saveLocation == 9:
+        score[saveLocation] = 25
+    if saveLocation == 10:
+        score[saveLocation] = 30
+    if saveLocation == 11:
+        score[saveLocation] = 40
+    if saveLocation == 12:
+        score[saveLocation] = 50
+    if 0 not in score[1:7] and bonusChecked == False: 
+        checkBonus()
+    time.sleep(2)
+    currentScore()
+    
+#check for bonus
+def checkBonus():
+    bonusChecked = True
+    if sum(score[1:7]) >= 63:
+        score[0] = 35
+        print('Nice! You got the bonus too.')
+    else:
+        print('No bonus for you.')
+
+def currentRoll(numRoll):
+    global roll
+    global numKeep
+    for i in range(numKeep,5):
+        roll[i] = random.randint(1,6)
+    print('Rolling...')
+    time.sleep(2)
+    if numRoll == 1:
+        print('First Roll')
+    elif numRoll == 2:
+        print('Second Roll')
+    else:
+        print('Third Roll')
+    print(roll)
+    print('Total: ' +str(sum(roll)))
+    time.sleep(2)
+
+def numSave():
+    print('How many numbers would you like to keep?')
+    global numRoll
+    global numKeep
+    global roll
+    numKeep = int(input())
+    if numKeep == 0:
+        numRoll = numRoll + 1
+    elif numKeep == 5:
+        numRoll = 4
+    elif numKeep >= 1 and numKeep < 5:    
+        rollCopy = roll
+        roll = [0,0,0,0,0]
+        for i in range(numKeep):
+            while True:
+                num1 = int(input('Enter number ' + str(i + 1) + ': '))
+                if num1 in rollCopy:
+                    roll[i]= num1
+                    rollCopy.remove(num1)
+                    break
+                else:
+                    print('That is not in your roll.')
+                    continue
+        print('Your current saved numbers.')
+        print(roll[0:numKeep])
+        numRoll = numRoll + 1
+        time.sleep(2)
+
+def endGame():
+    if sum(score) >= 300:
+        print('Congratulations ' + name + '! Your final score is ' + str(sum(score)) + '. That\'s impressive.')
+    elif sum(score) < 300 and sum(score) >= 200:
+        print(name + ' your final score is ' + str(sum(score)) + '. Not too bad.')
+    else:
+        print('Oh no! ' + name + ', your final score is ' + str(sum(score)) + '. That\'s shit.')
+    time.sleep(2)
+    print('Enter quit() to exit.')
+
+#beginning of game
+
+name = input('What is your name? ')
+print('')
+print('Welcome to Don\'s Yahtzee ' + name)
+
+for numRound in range(1,14):
+    print('Round ' + str(numRound))
+    numRoll = 1
+    numKeep = 0
+    roll = [0,0,0,0,0]
+    while numRoll < 4:
+        currentRoll(numRoll)
+        if numRoll < 3:
+            numSave()
+        else:
+            numRoll += 1
+    possibleMoves()
+    saveScratch()
+    numRound += 1
+currentScore()
+endGame()
